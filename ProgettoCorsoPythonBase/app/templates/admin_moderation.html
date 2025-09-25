@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+{% block title %}Moderazione | Social del Corso{% endblock %}
+
+{% block content %}
+<div class="container mt-2">
+  <h3 class="mb-4">Coda Moderazione</h3>
+
+  {% if not pending_posts and not pending_comments %}
+    <div class="alert alert-success">Nessun elemento in attesa. 🎉</div>
+  {% endif %}
+
+  
+  {% if pending_posts %}
+  <div class="mb-5">
+    <h5 class="mb-3">Post in revisione ({{ pending_posts|length }})</h5>
+    <div class="row g-3">
+      {% for p in pending_posts %}
+      <div class="col-12">
+        <div class="card shadow-sm">
+          <div class="card-body">
+            <div class="d-flex justify-content-between">
+              <div>
+                <strong>{{ p.author.nome if p.author else 'Utente' }}</strong>
+                <small class="text-muted ms-2">{{ p.created_at.strftime('%d/%m/%Y %H:%M') }}</small>
+              </div>
+              <span class="badge text-bg-warning">Pending</span>
+            </div>
+
+            {% if p.content %}
+              <p class="mt-2 mb-2">{{ p.content }}</p>
+            {% endif %}
+
+            {% if p.image_url %}
+              {% set img_src = p.image_url %}
+              <div class="mb-2">
+                <img class="img-fluid rounded" alt="img"
+                     src="{% if img_src.startswith('http') %}{{ img_src }}{% else %}{{ url_for('static', filename=img_src) }}{% endif %}">
+              </div>
+            {% endif %}
+
+            {% if p.video_url %}
+              {% set vid_src = p.video_url %}
+              <div class="mb-2">
+                <video controls style="max-width:100%; border-radius:8px;">
+                  <source src="{% if vid_src.startswith('http') %}{{ vid_src }}{% else %}{{ url_for('static', filename=vid_src) }}{% endif %}">
+                </video>
+              </div>
+            {% endif %}
+
+            <div class="d-flex align-items-center justify-content-between">
+              <div class="text-muted small">Toxicity: {{ '%.2f'|format(p.toxicity_score or 0) }}</div>
+              <div class="d-flex gap-2">
+                <form action="{{ url_for('main.admin_approve_post', post_id=p.id) }}" method="post">
+                  <button class="btn btn-sm btn-success">Approva</button>
+                </form>
+                <form action="{{ url_for('main.admin_reject_post', post_id=p.id) }}" method="post"
+                      onsubmit="return confirm('Rifiutare il post?');">
+                  <button class="btn btn-sm btn-danger">Rifiuta</button>
+                </form>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+
+  {% if pending_comments %}
+  <div class="mb-4">
+    <h5 class="mb-3">Commenti in revisione ({{ pending_comments|length }})</h5>
+    <div class="row g-3">
+      {% for c in pending_comments %}
+      <div class="col-12">
+        <div class="card shadow-sm">
+          <div class="card-body">
+            <div class="d-flex justify-content-between">
+              <div>
+                <strong>{{ c.user.nome if c.user else 'Utente' }}</strong>
+                <small class="text-muted ms-2">{{ c.created_at.strftime('%d/%m/%Y %H:%M') }}</small>
+              </div>
+              <span class="badge text-bg-warning">Pending</span>
+            </div>
+
+            <p class="mt-2 mb-2">{{ c.body }}</p>
+
+            <div class="d-flex align-items-center justify-content-between">
+              <div class="text-muted small">Toxicity: {{ '%.2f'|format(c.toxicity_score or 0) }}</div>
+              <div class="d-flex gap-2">
+                <form action="{{ url_for('main.admin_approve_comment', comment_id=c.id) }}" method="post">
+                  <button class="btn btn-sm btn-success">Approva</button>
+                </form>
+                <form action="{{ url_for('main.admin_reject_comment', comment_id=c.id) }}" method="post"
+                      onsubmit="return confirm('Rifiutare il commento?');">
+                  <button class="btn btn-sm btn-danger">Rifiuta</button>
+                </form>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}

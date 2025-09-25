@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block title %}La mia bacheca | Social del Corso{% endblock %}
+{% block content %}
+<h4 class="mb-3">Ciao, {{ me.nome }} 👋</h4>
+<div class="row">
+  <div class="col-md-4">
+    <div class="card shadow-sm mb-3">
+      <div class="card-body">
+        {% if me.immagine_profilo %}
+          <img class="avatar mb-2" src="{{ url_for('static', filename=me.immagine_profilo) }}" alt="avatar">
+        {% else %}
+          <img class="avatar mb-2" src="https://placehold.co/44x44" alt="avatar">
+        {% endif %}
+        <div><strong>Email:</strong> {{ me.email or "-" }}</div>
+        <div><strong>Corso:</strong> {{ me.corso }}</div>
+        <div><strong>Programmi:</strong> {{ me.programmi or "-" }}</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-8">
+    <h5>I miei post</h5>
+
+    {% if posts %}
+      {% for p in posts %}
+      <div class="card mb-3 shadow-sm">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-start">
+            <div class="text-muted small">{{ p.created_at.strftime("%d/%m/%Y %H:%M") }}</div>
+
+            <!-- Bottoni Modifica / Elimina  -->
+            <div class="d-flex gap-2">
+              <a class="btn btn-sm btn-outline-secondary"
+                 href="{{ url_for('main.edit_post', post_id=p.id) }}">Modifica</a>
+              <form action="{{ url_for('main.delete_post', post_id=p.id) }}" method="post"
+                    onsubmit="return confirm('Eliminare questo post?');">
+                <button class="btn btn-sm btn-outline-danger">Elimina</button>
+              </form>
+            </div>
+          </div>
+
+          {% if p.content %}
+            <p class="mb-2 mt-2">{{ p.content }}</p>
+          {% endif %}
+          {% if p.image_url %}
+            <img src="{{ p.image_url }}" class="mb-2" style="max-width:100%; border-radius:8px;">
+          {% endif %}
+          {% if p.video_url %}
+            <div class="ratio ratio-16x9 mb-2">
+              <iframe src="{{ p.video_url }}" allowfullscreen></iframe>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+      {% endfor %}
+    {% else %}
+      <div class="alert alert-secondary">Non hai ancora pubblicato nulla.</div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

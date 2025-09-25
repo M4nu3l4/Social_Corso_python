@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}Registrazione | Social del Corso{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-7 col-lg-6">
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <h3 class="card-title mb-3">Registrati</h3>
+        <form action="{{ url_for('main.register') }}" method="post" enctype="multipart/form-data">
+          <div class="mb-3">
+            <label class="form-label">Nome e Cognome*</label>
+            <input type="text" name="nome" class="form-control" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Email</label>
+            <input type="email" name="email" class="form-control">
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Corso*</label>
+            <input type="text" name="corso" class="form-control" placeholder="Es. Python Base" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Programmi conosciuti</label>
+            <input type="text" name="programmi" class="form-control" placeholder="php, react, angular">
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Immagine profilo (png/jpg/gif, max 5MB)</label>
+            <input type="file" name="immagine_profilo" class="form-control" accept=".png,.jpg,.jpeg,.gif">
+          </div>
+          <button class="btn btn-primary" type="submit">Entra nel Social</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

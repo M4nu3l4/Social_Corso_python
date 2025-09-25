@@ -1,0 +1,46 @@
+{# app/templates/_post_form.html #}
+{% set logged_in = session.get('user_id') is not none %}
+{% set muted = ctx_user and ctx_user.mute_until and ctx_user.mute_until > now %}
+
+{% if logged_in %}
+  {% if muted %}
+    <div class="alert alert-warning mb-3">
+      Sei temporaneamente in mute fino al {{ ctx_user.mute_until.strftime('%d/%m/%Y %H:%M') }}: non puoi pubblicare.
+    </div>
+  {% endif %}
+
+  <div class="card mb-4 shadow-sm">
+    <div class="card-body">
+      <form action="{{ url_for('main.create_post_form') }}" method="post" enctype="multipart/form-data">
+        <div class="mb-2">
+          <textarea name="content" class="form-control" rows="2" placeholder="Scrivi qualcosa..."
+                    {% if muted %}disabled{% endif %}></textarea>
+        </div>
+
+        <div class="row g-2 mb-2">
+          <div class="col">
+            <input name="image_url" class="form-control" placeholder="URL immagine (opz.)" {% if muted %}disabled{% endif %}>
+          </div>
+          <div class="col">
+            <input name="video_url" class="form-control" placeholder="URL video (opz.)" {% if muted %}disabled{% endif %}>
+          </div>
+        </div>
+
+        <div class="mb-2">
+          <input type="file" name="media_file" class="form-control" accept="image/*,video/*" {% if muted %}disabled{% endif %}>
+          <div class="form-text">
+            Puoi incollare un URL sopra oppure allegare un file (immagine o video). Se alleghi un file, ha la priorità.
+          </div>
+        </div>
+
+        <div class="d-flex justify-content-end mt-2">
+          <button class="btn btn-primary" {% if muted %}disabled{% endif %}>Pubblica</button>
+        </div>
+      </form>
+    </div>
+  </div>
+{% else %}
+  <div class="alert alert-info">
+    Per pubblicare devi <a href="{{ url_for('main.login') }}">accedere</a> o <a href="{{ url_for('main.register') }}">registrarti</a>.
+  </div>
+{% endif %}

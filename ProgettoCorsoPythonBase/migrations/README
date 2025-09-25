@@ -1,0 +1,254 @@
+Social del Corso – Flask + SQLAlchemy
+
+Mini-social interno per un corso di apprendimento: registrazione studenti, bacheca pubblica, bacheca personale, post con testo/immagini/video (anche upload da device), like, commenti, modifica ed eliminazione post.
+API REST incluse per test automatici o Postman.
+
+✨ Funzionalità
+
+Registrazione smart (nome, email, corso, programmi, immagine profilo):
+
+Se l’email esiste già → login automatico (niente duplicati).
+
+Login semplice via email (no password in questa versione).
+
+Bacheca pubblica con tutti i post.
+
+Bacheca personale con i propri post.
+
+Creazione post con:
+
+testo,
+
+URL immagine/video,
+
+upload file immagine o video (prioritario sugli URL).
+
+Like/unlike e commenti.
+
+Modifica/Elimina post (solo autore).
+
+API REST per studenti, post, like, commenti.
+
+🧰 Stack
+
+Python 3.11+
+
+Flask 3, Flask-SQLAlchemy, Flask-Migrate
+
+SQLite (sviluppo)
+
+Jinja2 + Bootstrap 5 (UI)
+
+python-dotenv per variabili locali
+
+📁 Struttura del progetto
+ProgettoCorsoPythonBase/
+├─ app/
+│  ├─ __init__.py
+│  ├─ models.py
+│  ├─ routes.py
+│  ├─ templates/
+│  │  ├─ base.html
+│  │  ├─ register.html
+│  │  ├─ login.html
+│  │  ├─ feed.html
+│  │  └─ profile.html
+│  └─ static/
+│     └─ uploads/          # file caricati (immagini/video)
+├─ instance/
+│  └─ social.db            # database (generato runtime)
+├─ migrations/             # Flask-Migrate (se inizializzato)
+├─ config.py
+├─ wsgi.py
+├─ .env
+└─ requirements.txt
+
+⚙️ Requisiti
+
+Python 3.11 o superiore
+
+Windows: PowerShell
+
+macOS/Linux: bash/zsh
+
+🚀 Setup rapido
+1) Creazione venv e installazione pacchetti
+
+Windows (PowerShell)
+
+cd $env:USERPROFILE\Desktop\ProgettoCorsoPythonBase
+py -3 -m venv .venv
+.\.venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+
+
+macOS / Linux
+
+cd ~/Desktop/ProgettoCorsoPythonBase
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+
+2) Variabili locali (.env)
+FLASK_APP=wsgi
+FLASK_ENV=development
+
+3) Configurazione (già pronta in config.py)
+class Config:
+    SECRET_KEY = "dev-secret-change-me"
+    SQLALCHEMY_DATABASE_URI = "sqlite:///instance/social.db"
+    SQLALCHEMY_TRACK_MODIFICATIONS = False
+
+    # upload
+    STATIC_DIR = BASE_DIR / "app" / "static"
+    UPLOAD_FOLDER = STATIC_DIR / "uploads"
+    MAX_CONTENT_LENGTH = 50 * 1024 * 1024  # 50MB
+
+    ALLOWED_IMAGE_EXTENSIONS = {"png","jpg","jpeg","gif","webp"}
+    ALLOWED_VIDEO_EXTENSIONS = {"mp4","webm","mov","avi","mkv"}
+    ALLOWED_EXTENSIONS = ALLOWED_IMAGE_EXTENSIONS | ALLOWED_VIDEO_EXTENSIONS
+
+
+Assicurati che esista la cartella app/static/uploads (viene creata a runtime, ma puoi crearla a mano).
+
+4) Database
+
+Usa uno dei due approcci:
+
+A. Veloce (create_all)
+
+flask --app wsgi init-db
+
+
+B. Con migration (consigliato)
+
+flask --app wsgi db init
+flask --app wsgi db migrate -m "initial tables"
+flask --app wsgi db upgrade
+
+5) Avvio server
+flask --app wsgi run --debug
+
+
+Apri: http://127.0.0.1:5000
+
+👩‍💻 Come usare l’app
+
+Vai su /register e compila il form (puoi caricare l’immagine profilo).
+
+Verrai reindirizzata/o alla bacheca pubblica (/feed).
+
+Crea un post con testo, URL immagine/video oppure allega un file dal device (immagine o video).
+
+Sui tuoi post vedrai Modifica ed Elimina.
+
+/me mostra la tua bacheca personale.
+
+/login permette l’accesso con email già registrata.
+
+🔌 API (quick reference)
+Studenti
+
+POST /api/students
+
+{
+  "nome": "Anna Bianchi",
+  "email": "anna@example.com",
+  "corso": "Python Base",
+  "programmi": "php, react",
+  "immagine_profilo": "uploads/.. (opz.)"
+}
+
+Post
+
+POST /api/posts
+
+{
+  "author_id": 1,
+  "content": "Ciao a tutti",
+  "image_url": "/static/uploads/...",  // o URL esterno
+  "video_url": null
+}
+
+
+GET /api/posts → lista post
+
+PATCH /api/posts/<id> → aggiorna campi (content, image_url, video_url)
+
+DELETE /api/posts/<id> → elimina post
+
+Like & Commenti (HTML)
+
+POST /like/<post_id> → toggle like (usa sessione)
+
+POST /comment/<post_id> body form: body="..."
+
+In questa versione le API di like/comment non sono esposte (solo via UI). Si possono aggiungere facilmente.
+
+📤 Upload post
+
+Nel form di pubblicazione (feed.html) c’è:
+
+<form ... enctype="multipart/form-data">
+  <input type="file" name="media_file" accept="image/*,video/*">
+</form>
+
+
+Il server salva i file in app/static/uploads/ con nome univoco.
+Se alleghi un file, ha la priorità sugli URL.
+
+🧪 Test con Postman / REST Client
+
+Postman Desktop: per chiamare localhost usa Desktop Agent.
+
+VS Code – REST Client: crea test.http con:
+
+### crea studente
+POST http://127.0.0.1:5000/api/students
+Content-Type: application/json
+
+{ "nome":"Anna","email":"anna@example.com","corso":"Python Base","programmi":"php, react" }
+
+### lista post
+GET http://127.0.0.1:5000/api/posts
+
+🛠️ Troubleshooting
+
+UNIQUE constraint failed: students.email
+Stai tentando di registrare di nuovo una mail esistente. Usa /login oppure la registrazione smart ti effettua l’accesso se l’email coincide.
+
+413 Request Entity Too Large
+Aumenta MAX_CONTENT_LENGTH in config.py.
+
+File non si vede:
+Se image_url/video_url è relativo (es. uploads/xyz.jpg), il template lo serve con url_for('static', filename=...). Se è un URL http/https viene usato direttamente.
+
+🔒 Note di sicurezza (per produzione)
+
+Questa è una demo didattica. Prima di mettere online:
+
+Aggiungere password + hashing (Flask-Login/Flask-WTF).
+
+Protezione CSRF per i form.
+
+Validazione/sanificazione avanzata dei file (MIME sniffing, antivirus, resize).
+
+Rate limiting, logging, HTTPS.
+
+Utente admin / moderazione contenuti.
+
+Pagination, ricerca, ordinamenti.
+
+🗺️ Roadmap suggerita
+
+✅ Edit/Delete post, Upload media
+
+🔜 Login con password (Flask-Login) e profilo utente
+
+🔜 Upload immagini dei post con anteprima
+
+🔜 Paginazione feed, filtri per corso
+
+🔜 Notifiche, mention, tagging semplice
+
+🔜 Dockerfile e compose per la classe

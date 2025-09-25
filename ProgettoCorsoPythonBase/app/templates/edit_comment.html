@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Modifica commento{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <div class="row justify-content-center">
+    <div class="col-md-8">
+      <div class="card shadow-sm">
+        <div class="card-body">
+          <h5 class="mb-3">Modifica commento</h5>
+          <form method="post" action="{{ url_for('main.edit_comment', comment_id=comment.id) }}">
+            <div class="mb-3">
+              <label class="form-label">Testo</label>
+              <textarea name="body" class="form-control" rows="3" required>{{ comment.body }}</textarea>
+              <div class="form-text">I commenti sono soggetti a moderazione automatica.</div>
+            </div>
+            <div class="d-flex justify-content-between">
+              <a href="{{ request.referrer or url_for('main.public_feed') }}" class="btn btn-outline-secondary">Annulla</a>
+              <button class="btn btn-primary">Salva</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

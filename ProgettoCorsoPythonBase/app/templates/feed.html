@@ -1,0 +1,203 @@
+{% extends "base.html" %}
+{% block title %}Bacheca pubblica | Social del Corso{% endblock %}
+
+{% block content %}
+
+<div class="container mt-4"> <div class="row g-4"> 
+  <div class="col-md-8"> <h4 class="mb-3">Bacheca pubblica</h4>
+
+     {% if current_user %}
+  <div class="card mb-4 shadow-sm">
+    <div class="card-body">
+      <form action="{{ url_for('main.create_post_form') }}" method="post" enctype="multipart/form-data">
+        <div class="mb-2">
+          <textarea name="content" class="form-control" rows="2" placeholder="Scrivi qualcosa..."
+                    {% if current_user.mute_until and current_user.mute_until > now %}disabled{% endif %}></textarea>
+        </div>
+
+        <div class="row g-2 mb-2">
+          <div class="col">
+            <input name="image_url" class="form-control" placeholder="URL immagine (opz.)"
+                   {% if current_user.mute_until and current_user.mute_until > now %}disabled{% endif %}>
+          </div>
+          <div class="col">
+            <input name="video_url" class="form-control" placeholder="URL video (opz.)"
+                   {% if current_user.mute_until and current_user.mute_until > now %}disabled{% endif %}>
+          </div>
+        </div>
+
+        <div class="mb-2">
+          <input type="file" name="media_file" class="form-control" accept="image/*,video/*"
+                 {% if current_user.mute_until and current_user.mute_until > now %}disabled{% endif %}>
+          <div class="form-text">
+            Puoi incollare un URL sopra oppure allegare un file (immagine o video). Se alleghi un file, ha la priorità.
+          </div>
+        </div>
+
+        
+        <div class="d-flex justify-content-between align-items-center mt-2">
+          {% if is_admin %}
+            <a href="{{ url_for('main.admin_moderation_html') }}" class="btn btn-outline-dark btn-sm">
+              Moderazione
+              <span class="badge {% if pending_total>0 %}text-bg-danger{% else %}text-bg-secondary{% endif %} ms-1">
+                {{ pending_total or 0 }}
+              </span>
+            </a>
+          {% else %}
+            <span></span>
+          {% endif %}
+
+          <button class="btn btn-primary"
+                  {% if current_user.mute_until and current_user.mute_until > now %}disabled{% endif %}>
+            Pubblica
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+  {% else %}
+    <div class="alert alert-info">
+      Per pubblicare, <a href="{{ url_for('main.register') }}">registrati</a>.
+    </div>
+  {% endif %}
+
+  {% for p in posts %}
+  <div class="card mb-3 post-card shadow-sm">
+    <div class="card-body">
+      <div class="d-flex align-items-center mb-2">
+        {% if p.author and p.author.immagine_profilo %}
+          <img class="avatar me-2" src="{{ url_for('static', filename=p.author.immagine_profilo) }}" alt="avatar">
+        {% else %}
+          <img class="avatar me-2" src="https://placehold.co/44x44" alt="avatar">
+        {% endif %}
+        <div>
+          <div class="fw-semibold">{{ p.author.nome if p.author else 'Utente' }}</div>
+          <div class="text-muted small">{{ p.created_at.strftime("%d/%m/%Y %H:%M") }}</div>
+        </div>
+      </div>
+
+      
+      {% if current_user and current_user.id == p.author_id and p.moderation_status and p.moderation_status != 'approved' %}
+        <div class="mb-2">
+          {% if p.moderation_status == 'pending' %}
+            <span class="badge text-bg-warning">In revisione</span>
+            <small class="text-muted ms-2">Questo post è visibile solo a te finché non viene approvato.</small>
+          {% elif p.moderation_status == 'rejected' %}
+            <span class="badge text-bg-danger">Rifiutato</span>
+            <small class="text-muted ms-2">Non è visibile pubblicamente.</small>
+          {% endif %}
+        </div>
+      {% endif %}
+
+      {% if p.content %}
+        <p class="mb-2">{{ p.content }}</p>
+      {% endif %}
+
+      
+      
+      {% if p.image_url %}
+        {% set img_src = p.image_url %}
+        {% if img_src.startswith('http') %}
+          <img src="{{ img_src }}" class="img-fluid rounded mb-2" alt="immagine post">
+        {% else %}
+          <img src="{{ url_for('static', filename=img_src) }}" class="img-fluid rounded mb-2" alt="immagine post">
+        {% endif %}
+      {% endif %}
+
+      {% if p.video_url %}
+        {% set vid_src = p.video_url %}
+        <video class="mb-2" controls style="max-width:100%; border-radius:8px;">
+          <source src="{% if vid_src.startswith('http') %}{{ vid_src }}{% else %}{{ url_for('static', filename=vid_src) }}{% endif %}">
+        </video>
+      {% endif %}
+
+      <div class="d-flex align-items-center gap-3">
+        <form action="{{ url_for('main.like_post_html', post_id=p.id) }}" method="post">
+          <button class="btn btn-sm btn-outline-primary" {% if not session.get('user_id') %}disabled{% endif %}>
+            ❤️ Like ({{ p.likes|length }})
+          </button>
+        </form>
+
+        {% if session.get('user_id') and session.get('user_id') == p.author_id %}
+          <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('main.edit_post', post_id=p.id) }}">
+            Modifica
+          </a>
+          <form action="{{ url_for('main.delete_post', post_id=p.id) }}" method="post" class="d-inline"
+                onsubmit="return confirm('Eliminare questo post?');">
+            <button class="btn btn-sm btn-outline-danger">Elimina</button>
+          </form>
+        {% endif %}
+      </div>
+
+      <hr>
+
+      
+      {% set uid = session.get('user_id') %}
+      <div class="mt-2">
+        {% for c in p.comments
+              if (c.is_visible is true)
+                 or (c.is_visible is none)
+                 or (uid and c.user_id == uid and c.moderation_status == 'pending') %}
+          <div class="mb-2">
+            <div class="d-flex justify-content-between">
+              <div>
+                <strong>{{ c.user.nome }}</strong>
+                <span class="text-muted small">{{ c.created_at.strftime("%d/%m/%Y %H:%M") }}</span>
+                {% if uid and c.user_id == uid and c.moderation_status == 'pending' %}
+                  <span class="badge text-bg-warning ms-2">In revisione</span>
+                {% endif %}
+                <br>{{ c.body }}
+              </div>
+
+              {% if uid and (uid == c.user_id or is_admin) %}
+              <div class="ms-3 text-nowrap">
+                <a href="{{ url_for('main.edit_comment', comment_id=c.id) }}"
+                   class="btn btn-sm btn-outline-secondary">Modifica</a>
+                <form action="{{ url_for('main.delete_comment', comment_id=c.id) }}"
+                      method="post" class="d-inline"
+                      onsubmit="return confirm('Eliminare questo commento?');">
+                  <button class="btn btn-sm btn-outline-danger">Elimina</button>
+                </form>
+              </div>
+              {% endif %}
+            </div>
+          </div>
+        {% else %}
+          <div class="text-muted small">Nessun commento.</div>
+        {% endfor %}
+      </div>
+
+      <form class="mt-2" action="{{ url_for('main.add_comment_html', post_id=p.id) }}" method="post">
+        <div class="input-group">
+          <input name="body" class="form-control" placeholder="Aggiungi un commento..."
+                 {% if not session.get('user_id') or (current_user and current_user.mute_until and current_user.mute_until > now) %}disabled{% endif %}>
+          <button class="btn btn-outline-secondary"
+                  {% if not session.get('user_id') or (current_user and current_user.mute_until and current_user.mute_until > now) %}disabled{% endif %}>
+            Invia
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+<!--  IMMAGINI  -->
+<div class="col-md-4">
+  <h5 class="mb-3">Immagini</h5>
+  <div class="sidebar-images">
+    <img src="{{ url_for('static', filename='uploads/img1.png') }}" class="img-fluid mb-3 rounded shadow-sm" alt="img1">
+    <img src="{{ url_for('static', filename='uploads/img2.png') }}" class="img-fluid mb-3 rounded shadow-sm" alt="img2">
+    <img src="{{ url_for('static', filename='uploads/img3.png') }}" class="img-fluid mb-3 rounded shadow-sm" alt="img3">
+    <img src="{{ url_for('static', filename='uploads/img4.png') }}" class="img-fluid mb-3 rounded shadow-sm" alt="img4">
+    <img src="{{ url_for('static', filename='uploads/img5.png') }}" class="img-fluid mb-3 rounded shadow-sm" alt="img5">
+    <img src="{{ url_for('static', filename='uploads/img6.jpeg') }}" class="img-fluid mb-3 rounded shadow-sm" alt="img6">
+  </div>
+</div>
+
+<style>
+  .avatar { width:44px; height:44px; border-radius:50%; object-fit:cover; }
+  .sidebar-images { max-height: 120vh; overflow-y: auto; }
+  .sidebar-images img { object-fit: cover; }
+</style>
+{% endblock %}

@@ -1,0 +1,20 @@
+{# app/templates/_post_actions.html #}
+{% set item = post if post is defined else p %}
+
+<div class="d-flex align-items-center gap-3">
+  <form action="{{ url_for('main.like_post_html', post_id=item.id) }}" method="post">
+    <button class="btn btn-sm btn-outline-primary" {% if not session.get('user_id') %}disabled{% endif %}>
+      ❤️ Like ({{ item.likes|length }})
+    </button>
+  </form>
+
+  {% if session.get('user_id') and session.get('user_id') == item.author_id %}
+    <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('main.edit_post', post_id=item.id) }}">
+      Modifica
+    </a>
+    <form action="{{ url_for('main.delete_post', post_id=item.id) }}" method="post" class="d-inline"
+          onsubmit="return confirm('Eliminare questo post?');">
+      <button class="btn btn-sm btn-outline-danger">Elimina</button>
+    </form>
+  {% endif %}
+</div>
